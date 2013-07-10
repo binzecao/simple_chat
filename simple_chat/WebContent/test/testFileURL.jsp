@@ -1,8 +1,8 @@
-ï»¿<%@ page language="java" contentType="text/html; charset=gbk"%>
+<%@ page language="java" contentType="text/html; charset=gbk"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>æµ‹è¯•-è·å–ä¸Šä¼ æ–‡ä»¶çš„ç»å¯¹è·¯å¾„</title>
+<title>²âÊÔ-»ñÈ¡ÉÏ´«ÎÄ¼şµÄ¾ø¶ÔÂ·¾¶</title>
 
 <script>
 function test(){
@@ -15,11 +15,11 @@ function test(){
 	*/
 
 	var str = "file.value:" + file.value+"\n<br/>";
-	str += "file.files[0]å…¨éƒ¨å±æ€§:";
+	str += "file.files[0]È«²¿ÊôĞÔ:";
 	for(var p in file.files[0]){
-		str += p+";" 
+		str += p+";" ;
 	}
-	str +="\n<br/>å„å±æ€§å€¼ï¼š\n<br/>";
+	str +="\n<br/>¸÷ÊôĞÔÖµ£º\n<br/>";
 	for(var p in file.files[0]){
 		str += "\t"+p+":"+file.files[0][p]+"\n<br/>"; 
 	}
@@ -29,10 +29,10 @@ function test(){
 
 </head>
 <body>
-	<h2>æµ‹è¯•-è·å–ä¸Šä¼ æ–‡ä»¶çš„ç»å¯¹è·¯å¾„</h2>
+	<h2>²âÊÔ-»ñÈ¡ÉÏ´«ÎÄ¼şµÄ¾ø¶ÔÂ·¾¶</h2>
 	
-	<input type="file" id="file" value="é€‰æ‹©æ–‡ä»¶"/>
-	<input type="button" value="ä¸Šä¼ " onclick="test();"/>
+	<input type="file" id="file" value="Ñ¡ÔñÎÄ¼ş"/>
+	<input type="button" value="ÉÏ´«" onclick="test();"/>
 	
 	<hr/>
 	<div id="inf" style="width:100%"></div>

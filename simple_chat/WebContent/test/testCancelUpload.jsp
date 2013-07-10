@@ -1,4 +1,4 @@
-ï»¿<%@ page language="java" contentType="text/html; charset=UTF-8"
+<%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="gbk"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -12,19 +12,19 @@
 		var file = $("#file")[0];
 		var path = file.value;
 		var fileName = path.substring(path.lastIndexOf("\\")+1);
-		$("#inf-panel").html('<span style="color:red">'+fileName+" å·²é€‰æ‹©</span>");
+		$("#inf-panel").html('<span style="color:red">'+fileName+" ÒÑÑ¡Ôñ</span>");
 	}
 	function upload(elem){
 		var file = $("#file")[0];
 		var path = file.value;
 		var fileName = path.substring(path.lastIndexOf("\\")+1);
 		if(path==""){
-			alert("è¯·å…ˆé€‰æ–‡ä»¶");
+			alert("ÇëÏÈÑ¡ÎÄ¼ş");
 			return;
 		}
-		$("#inf-panel").html('<span style="color:red">'+fileName+" æ­£åœ¨ä¸Šä¼ ...</span>");
+		$("#inf-panel").html('<span style="color:red">'+fileName+" ÕıÔÚÉÏ´«...</span>");
 		$("#file")[0].form.submit();
-		// è®¾ç½®ä¸‰ä¸ªæŒ‰é’®çš„ç¦ç”¨
+		// ÉèÖÃÈı¸ö°´Å¥µÄ½ûÓÃ
 		setBtnDisalbeState(false);
 	}
 	function cancelUpload(){
@@ -32,23 +32,23 @@
 		var file = $("#file")[0];
 		var path = file.value;
 		var fileName = path.substring(path.lastIndexOf("\\")+1);
-		$("#inf-panel").html('<span style="color:red">'+fileName+" ä¸Šä¼ å·²å–æ¶ˆ</span>");
-		// è®¾ç½®ä¸‰ä¸ªæŒ‰é’®çš„ç¦ç”¨
+		$("#inf-panel").html('<span style="color:red">'+fileName+" ÉÏ´«ÒÑÈ¡Ïû</span>");
+		// ÉèÖÃÈı¸ö°´Å¥µÄ½ûÓÃ
 		setBtnDisalbeState(true);
 	}
 	function uploadCallBack(isSuccess,msg){
 		if(isSuccess){
-			// æç¤ºä¿¡æ¯
-			$("#inf-panel").html('<span style="color:red">'+msg+' ä¸Šä¼ æˆåŠŸ!</span>');
+			// ÌáÊ¾ĞÅÏ¢
+			$("#inf-panel").html('<span style="color:red">'+msg+' ÉÏ´«³É¹¦!</span>');
 		}else{
-			// æç¤ºä¿¡æ¯
+			// ÌáÊ¾ĞÅÏ¢
 			$("#inf-panel").html('<span style="color:red">'+msg+'</span>');
 		}
-		// è®¾ç½®ä¸‰ä¸ªæŒ‰é’®çš„ç¦ç”¨
+		// ÉèÖÃÈı¸ö°´Å¥µÄ½ûÓÃ
 		setBtnDisalbeState(true);
 	}
 	function setBtnDisalbeState(canUpload){
-		// è®¾ç½®ä¸‰ä¸ªæŒ‰é’®çš„ç¦ç”¨çŠ¶æ€
+		// ÉèÖÃÈı¸ö°´Å¥µÄ½ûÓÃ×´Ì¬
 		$("#file").attr("disabled",!canUpload);
 		$("#upload-btn").attr("disabled",!canUpload);
 		$("#cancelUpload-btn").attr("disabled",canUpload);
@@ -60,9 +60,9 @@
 </script>
 <body>	
 	<form action="Upload" enctype="multipart/form-data" method="post" target="iframe1">
-		<input id="file" type="file" name="file" value="é€‰æ‹©æ–‡ä»¶" onchange="selectFile();"/>
-		<input id="upload-btn" type="button" value="ä¸Šä¼ " onclick="upload(this)"/>
-		<input id="cancelUpload-btn" disabled="true" type="button" value="å–æ¶ˆä¸Šä¼ " onclick="cancelUpload()"/>
+		<input id="file" type="file" name="file" value="Ñ¡ÔñÎÄ¼ş" onchange="selectFile();"/>
+		<input id="upload-btn" type="button" value="ÉÏ´«" onclick="upload(this)"/>
+		<input id="cancelUpload-btn" disabled="true" type="button" value="È¡ÏûÉÏ´«" onclick="cancelUpload()"/>
 	</form>
 	<div id="inf-panel"></div>
 	<iframe id="iframe1" name="iframe1"></iframe>

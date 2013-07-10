@@ -1,4 +1,4 @@
-﻿package bin;
+package bin;
 
 import java.io.IOException;
 
@@ -25,11 +25,9 @@ public class Speak extends HttpServlet {
 
 	protected synchronized void doPost(HttpServletRequest req,
 			HttpServletResponse res) throws ServletException, IOException {
-		// System.out.println("Start Speak Servlet.......");
-
 		// 得到客户端发来的内容和对话最大id
 		String txt = (String) req.getParameter("content");
-
+		
 		// 保存对话
 		DialogManager.saveDialog(getServletContext(), txt, 1);
 	}

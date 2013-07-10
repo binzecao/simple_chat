@@ -1,8 +1,8 @@
-﻿<%@ page language="java" contentType="text/html; charset=gbk"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">  
 <html>
 <head>
-
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Simple Chat</title>
 <style>
 .dialog{width:100%;border:1px solid #ccc;padding:5px;float:left}
@@ -13,13 +13,16 @@
 </style>
 <meta http-equiv="Expires" CONTENT="0">
 <meta http-equiv="Cache-Control" CONTENT="no-cache">
-<meta http-equiv="Pragma" CONTENT="no-cache"> 
+<meta http-equiv="Pragma" CONTENT="no-cache">
 <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
 <script>
 $(function(){
 	// 全局变量
 	failedConnTime = 0;//定义连接服务器次数
 	timeoutId = null;
+	
+	//初始化编辑器
+	initInputer();
 	
 	// 设置三个按钮的禁用
 	setBtnDisalbeState(true);
@@ -42,6 +45,9 @@ function ajaxLoad(isLoadAll){
 			//"{hasError:true,errorTxt:'error'}" // 错误
 			//"{hasError:false,aDialogs:[{did:0,type:1,txt:'a'},{did:1,type:2,txt:'b'}]}"  // 对话
 			//type:1 :普通对话    type:2 上传文件成功提示
+			
+			// 转义字符"\"变为"\\",使eval不出错
+			rtnText.replace(/\\/g,"\\\\");
 			
 			// 解析返回的json对象
 			var rtnObj = eval("("+rtnText+")");
@@ -68,15 +74,18 @@ function ajaxLoad(isLoadAll){
 				var html = "";
 				// 添加对话
 				if(type==1){
+					// 对话为文本
 					html = '<div class="'+className+'" dialog-id="'+did+'" onclick="showCopyBtn(this)">'+
 						'<span class="dialog-content">'+txt+'</span>'+
 						'</div>';
 				}else if(type==2){
+					// 对话为上传提示
 					var aFile = eval(txt);
+					var name = encodeURI(aFile[0]);
 					html = '<div class="'+className+'" dialog-id="'+did+'">'+
 						'<span class="dialog-content dialog-file">文件：<i>'+aFile[0]+'</i> 已经成功上传到服务器！</span>'+
-						'<a href="Download?name='+aFile[0]+'" onclick="downloadFile(this,event)">下载</a>'+
-						'<a href="'+aFile[1]+'" style="margin-left:30px">直接浏览</a>'+
+						'<a href="Download?name='+name+'" onclick="downloadFile(this,event)">下载</a>'+
+						'<a href="'+encodeURI(aFile[1])+'" style="margin-left:30px">直接浏览</a>'+
 						'</div>';
 				}else{
 					alert("marking another type");
@@ -89,7 +98,7 @@ function ajaxLoad(isLoadAll){
 			}
 		},
 		error:function(evt){
-			if(evt.readyState==0 && evt.status==0){
+			if((evt.readyState==0 && evt.status==0) || (evt.readyState==4 && evt.status==404)){
 				// 无法连接服务器
 				failedConnTime++;
 			}else{
@@ -114,15 +123,22 @@ function ajaxLoad(isLoadAll){
 	);
 }
 function speak(){
-	var content = $("#inputer").val();
-	if(content.replace(/(^\s*)|(\s*$)/g,'')=="") return;
+	var content = $("#inputer").contents()[0].body.innerHTML;
+	// chrome换行用div(从第二行开始加)，ie、opera用p, 火狐用<br>
+	// 先将<div><br></div>变为<div></div>，再将<p>&nbsp;</p>变为<p></p>,然后<div>、</p>、<br>作为换行标识变为<br/>，再清除掉多余的<p>、<\div>、\r\n、\n，最后将后面的所有的换行抛弃，即将后面所有的<br/>清除掉
+	content = content.replace(/<div>(<br>|<br\/>)<\/div>/gi,"<div></div>").replace(/<p>&nbsp;<\/p>/gi,"<p></p>").replace(/(<div>|<\/p>|<br>)/gi,"<br/>").replace(/(<p>|<\/div>|\r\n|\n)/gi,"").replace(/(<br\/>)*$/gi,"");
+	// 除了空格回车其他什么都没按当作没输入，提示且返回
+	if(content.replace(/(<br\/>|&nbsp;|\s)/gi,"")==""){
+		alert("plz say something!");
+		return;
+	}
 	$.ajax({
 		url:"Speak",
 		type:"post",
 		data:{content:content},
 		dataType:"text",
 		success:function(resText){
-			$("#inputer").val("");
+			$("#inputer").contents()[0].body.innerHTML = "";
 		},
 		error:function(evt){
 			alert("error in Speak\n"+
@@ -137,9 +153,9 @@ function showCopyBtn(elem){
 	$("#copy-btn").appendTo(elem).end().show();
 }
 function copyAll(evt,elem){	
-	// 将整个对话文本复制到textArea中
-	var text = elem.previousSibling.innerHTML;
-	$("#inputer").val(text);
+	var html = elem.previousSibling.innerHTML;
+	var editorDoc = $("#inputer").contents()[0];
+	editorDoc.body.innerHTML = html;
 	// 取消冒泡
 	evt = evt ? evt:window.event;
 	if(evt.stopPropagation){
@@ -149,7 +165,8 @@ function copyAll(evt,elem){
 	}
 }
 function reset(){
-	$("#inputer").val("");
+	var editorDoc = $("#inputer").contents()[0];
+	editorDoc.body.innerHTML ="";
 }
 function selectFile(){
 	// 提示信息
@@ -162,6 +179,11 @@ function upload(){
 	if(fileName==""){alert("请先选文件");return;}
 	// 提示信息
 	$("#inf-panel").html('<span style="color:red">'+fileName+" 正在上传...</span>");
+	// 移除再添加响应的iframe1
+	$("iframe[name='iframe1']").remove();
+	$('<iframe name="iframe1" style="display: none"></iframe>').appendTo(document.body);
+	// 使用form 的 响应 Target指向 新建的 iframe1;
+	$("#file")[0].form.target = "iframe1";
 	// 提交上传文件的表单
 	$("#file")[0].form.submit();
 	// 设置三个按钮的禁用
@@ -179,8 +201,8 @@ function uploadCallBack(isSuccess,msg){
 	setBtnDisalbeState(true);
 };
 function cancelUpload(){
-	// 刷新iframe1，使得上传的流终端
-	$("iframe[name='iframe1']").contents()[0].location.reload();
+	// 移除iframe1中断，再使得上传的流中断
+	$("iframe[name='iframe1']").remove();
 	// 提示信息
 	var fileName = $("#file")[0].value.substring($("#file")[0].value.lastIndexOf("\\")+1);
 	$("#inf-panel").html('<span style="color:red">'+fileName+" 上传已取消</span>");
@@ -195,7 +217,7 @@ function downloadFile(elem,evt){
 		event.returnValue = false;
 	}
 	// 使流响应在iframe,使服务端的脚本可以响应在iframe中实现无页面跳转
-	var name = ("tempDown"+(Math.random()*Math.random())).replace(/\./,"");
+	var name = "tempDown"+(new Date().getTime()+Math.random()+"").replace(/\./,"");
 	$('<iframe name="'+name+'" style="display:none"></iframe>').appendTo(document.body);
 	$("iframe[name='"+name+"']").contents()[0].write(
 			'<script>window.location.href="'+elem.href+'";<'+'/script>');
@@ -208,25 +230,38 @@ function setBtnDisalbeState(canUpload){
 	$("#upload-btn").attr("disabled",!canUpload);
 	$("#cancelUpload-btn").attr("disabled",canUpload);
 }
+function initInputer(){
+	// 初始化编辑器
+	setTimeout(function(){
+		var editorDoc = $("#inputer").contents()[0];
+		editorDoc.open();
+		editorDoc.write("<html><head>");
+		editorDoc.write("<html><head><style>");
+		editorDoc.write("body{word-break:break-all;font-family: sans-serif;font-size: 12px;}");
+		editorDoc.write("p,div{margin:1px 0}");
+		editorDoc.write("</style></head><body></body></html>")
+		editorDoc.close();
+		editorDoc.designMode = "on";
+		editorDoc.contentEditable = true;
+	},10);
+}
 </script>
-
 </head>
 <body>
 
 <div id="dialog-panel" style="width:100%;"></div>
 <hr/>
 <div id="operation-panel" style="width:100%">
-	<textarea id="inputer" style="width:100%"></textarea>
+	<iframe id="inputer" style="width:100%;height:300px;"></iframe>
 	<input type="button" value="提交" onclick="speak();"/>
 	<input type="button" value="重设" onclick="reset();"/>
 	
 	<hr/>
-	<form action="Upload" enctype="multipart/form-data" method="post" target="iframe1">
+	<form action="Upload" enctype="multipart/form-data" method="post">
 		<input id="file" type="file" name="file" value="选择文件" onchange="selectFile();"/>
 		<input id="upload-btn" type="button" value="上传" onclick="upload(this)"/>
 		<input id="cancelUpload-btn" disabled="true" type="button" value="取消上传" onclick="cancelUpload()"/>
 	</form>
-	<iframe name="iframe1" style="display: none" ></iframe>
 </div>
 
 <div id="inf-panel" style="width:100%"></div>

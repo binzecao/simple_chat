@@ -4,7 +4,7 @@
 	<groupId>bin</groupId>
 	<artifactId>simple_chat</artifactId>
 	<packaging>war</packaging>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<name>simple_chat Maven Webapp</name>
 	<url>http://maven.apache.org</url>
 	<dependencies>
