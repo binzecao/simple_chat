@@ -1,8 +1,6 @@
 package bin;
 
-/** ContentType转换类
- * 加这个中文注释是因为中文能让java文件的编码从ANSI变为UTF-8(无BOM)，
- * 不然每次Maven package后，对于纯英文的java文件，eclipse都会将之变为ANSI，然后无端端报错*/
+/** ContentType转换类 */
 public class ContentTypeUtil {
 	private static String arr[] = {
 		"*","application/octet-stream","tif","image/tiff",
@@ -189,12 +187,11 @@ public class ContentTypeUtil {
 	}
 	
 	public static String getContentTypeByFileName(String fileName){
-		fileName = fileName.toLowerCase();
 		if(fileName.contains(".")){
-			fileName = fileName.substring(fileName.lastIndexOf(".")+1);
+			fileName = fileName.substring(fileName.lastIndexOf(".")+1).toLowerCase();
+			return getContentTypeByExtention(fileName);
 		}else{
-			fileName="";
+			return "application/octet-stream";
 		}
-		return getContentTypeByExtention(fileName);
 	}
 }

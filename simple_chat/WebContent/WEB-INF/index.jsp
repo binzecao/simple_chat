@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">  
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>Simple Chat</title>
 <style>
 .dialog{width:100%;border:1px solid #ccc;padding:5px;float:left}
@@ -11,10 +11,10 @@
 .odd{background-color:#eee}
 .copy-btn{float:right;clear:both;}
 </style>
-<meta http-equiv="Expires" CONTENT="0">
-<meta http-equiv="Cache-Control" CONTENT="no-cache">
-<meta http-equiv="Pragma" CONTENT="no-cache">
-<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<meta http-equiv="Expires" content="0" />
+<meta http-equiv="Cache-Control" content="no-cache" />
+<meta http-equiv="Pragma" content="no-cache" />
+<script src="resources/js/jquery-1.9.1.js"></script>
 <script>
 $(function(){
 	// 全局变量
@@ -43,11 +43,11 @@ function ajaxLoad(isLoadAll){
 		timeout:20000,
 		success:function(rtnText){
 			//"{hasError:true,errorTxt:'error'}" // 错误
-			//"{hasError:false,aDialogs:[{did:0,type:1,txt:'a'},{did:1,type:2,txt:'b'}]}"  // 对话
+			//"{hasError:false,aDialogs:[{did:0,type:1,txt:'a'},{did:1,type:2,txt:'\''}]}"  // 对话
 			//type:1 :普通对话    type:2 上传文件成功提示
 			
-			// 转义字符"\"变为"\\",使eval不出错
-			rtnText.replace(/\\/g,"\\\\");
+			// 转义字符"\"变为"\\"，使eval不出错
+			//rtnText = rtnText.replace(/\\/g,"\\\\");
 			
 			// 解析返回的json对象
 			var rtnObj = eval("("+rtnText+")");
@@ -65,7 +65,7 @@ function ajaxLoad(isLoadAll){
 			for(var i=0;i<aDialogs.length;i++){
 				// 解释字符串
 				var did = aDialogs[i].did;
-				var txt = aDialogs[i].txt;
+				var txt = decodeURIComponent(aDialogs[i].txt);
 				var type = aDialogs[i].type;
 				
 				// 设置dialog样式
@@ -98,7 +98,8 @@ function ajaxLoad(isLoadAll){
 			}
 		},
 		error:function(evt){
-			if((evt.readyState==0 && evt.status==0) || (evt.readyState==4 && evt.status==404)){
+			if((evt.readyState==0 && evt.status==0) || 
+					(evt.readyState==4 && (evt.status==404 || evt.status==12029))){
 				// 无法连接服务器
 				failedConnTime++;
 			}else{
@@ -112,7 +113,7 @@ function ajaxLoad(isLoadAll){
 		complete:function(){
 			// 无法连接服务器的操作
 			if(failedConnTime>3){ //无法连接超过10次 
-				alert("无法连接服务器,请刷新页面再试!");
+				alert("与服务器的连接已断,请刷新页面再试!");
 				clearTimeout(timeoutId);
 			}else{
 				// 成功异步成功连接后处理
@@ -141,10 +142,19 @@ function speak(){
 			$("#inputer").contents()[0].body.innerHTML = "";
 		},
 		error:function(evt){
-			alert("error in Speak\n"+
-					"readyState: "+evt.readyState+
-					"\nstatus: "+evt.status+
-					"\nstatusText: "+evt.statusText);
+			if((evt.readyState==0 && evt.status==0) || 
+					(evt.readyState==4 && (evt.status==404 || evt.status==12029))){
+				alert("与服务器的连接已断,请刷新页面再试!");
+			}else{
+				// 其他异常
+				alert("error in ajaxLoad\n"+
+						"readyState: "+evt.readyState+
+						"\nstatus: "+evt.status+
+						"\nstatusText: "+evt.statusText);
+			}
+		},
+		complete:function(){
+			$("#inputer").contents()[0].body.focus();
 		}
 	});
 }
@@ -171,12 +181,24 @@ function reset(){
 function selectFile(){
 	// 提示信息
 	var fileName = $("#file")[0].value.substring($("#file")[0].value.lastIndexOf("\\")+1);
-	$("#inf-panel").html('<span style="color:red">'+fileName+" 已选择</span>");
+	$("#inf-panel").html("");
+	if(fileName!="")
+		$("#inf-panel").html('<span style="color:red">'+fileName+" 已选择</span>");
 }
-function upload(){	
+function upload(){
 	// 检查是否选择了文件
 	var fileName = $("#file")[0].value.substring($("#file")[0].value.lastIndexOf("\\")+1);
 	if(fileName==""){alert("请先选文件");return;}
+	
+	// 限制上传文件大小
+	var maxSize = <%=application.getAttribute("UPLOADFILRS_MAX_SIZE") %>;
+	if($("#file")[0].files){
+		if($("#file")[0].files[0].size > maxSize){
+			alert("上传文件太大，不能过" + maxSize/1024/1024 + "MB");
+			return;
+		}
+	}
+	
 	// 提示信息
 	$("#inf-panel").html('<span style="color:red">'+fileName+" 正在上传...</span>");
 	// 移除再添加响应的iframe1
@@ -239,7 +261,7 @@ function initInputer(){
 		editorDoc.write("<html><head><style>");
 		editorDoc.write("body{word-break:break-all;font-family: sans-serif;font-size: 12px;}");
 		editorDoc.write("p,div{margin:1px 0}");
-		editorDoc.write("</style></head><body></body></html>")
+		editorDoc.write("</style></head><body></body></html>");
 		editorDoc.close();
 		editorDoc.designMode = "on";
 		editorDoc.contentEditable = true;
@@ -260,7 +282,7 @@ function initInputer(){
 	<form action="Upload" enctype="multipart/form-data" method="post">
 		<input id="file" type="file" name="file" value="选择文件" onchange="selectFile();"/>
 		<input id="upload-btn" type="button" value="上传" onclick="upload(this)"/>
-		<input id="cancelUpload-btn" disabled="true" type="button" value="取消上传" onclick="cancelUpload()"/>
+		<input id="cancelUpload-btn" disabled="disabled" type="button" value="取消上传" onclick="cancelUpload()"/>
 	</form>
 </div>
 

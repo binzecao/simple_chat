@@ -2,18 +2,22 @@ package bin;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.MultipartConfig;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 
-@WebServlet("/Upload")
-@MultipartConfig
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadBase.SizeLimitExceededException;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+
 public class Upload extends HttpServlet {
 	private static final long serialVersionUID = 101L;
 
@@ -22,103 +26,165 @@ public class Upload extends HttpServlet {
 	}
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		doPost(req, resp);
 	}
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse res) {
-		Part file = null;
+		// 获取上传文件的大小
+		long size = req.getContentLength();
 
-		// 获取上传的文件
-		try {
-			file = req.getPart("file");
-		} catch (IOException ex) {
-			// org.apache.tomcat.util.http.fileupload.FileUploadBase$IOFileUploadException: 
-			// 	Processing of multipart/form-data request failed. Stream ended unexpectedly
-			//System.err.println(ex.getMessage() + "\n可能是用户取消上传");
+		// 获取系统最大上传文件大小
+		long maxSize = (Long) getServletContext().getAttribute(ServletContextParams.UPLOADFILRS_MAX_SIZE);
+
+		// 比较大小,超出返回错误信息
+		if (size > maxSize) {
+			String rtnText = "上传失败(1): 文件不能大于" + maxSize / 1024 / 1024 + " MB";
+			outputText(res, false, rtnText);
 			return;
-		} catch (IllegalStateException e) {
-			System.err.println("1");
-			e.printStackTrace();
-		} catch (ServletException e) {
-			System.err.println("2");
-			e.printStackTrace();
 		}
+
+		// 获取上传文件夹名字
+		String folderPath = (String) getServletContext().getAttribute(ServletContextParams.UPLOADFILES_FOLDER_NAME);
+
+		// 获取上传在服务器文件夹的路径
+		String uploadFolderPath = getServletContext().getRealPath("/" + folderPath);
+		File dir = new File(uploadFolderPath);
+
+		// 设置缓冲区目录
+		String bufFolderPath = getServletContext().getRealPath("/fileBufferFolder");
+		File bufFolderFile = new File(bufFolderPath);
+
+		// 有些服务商连mkdirs()都不允许
+		try {
+			if (!bufFolderFile.exists()) {
+				bufFolderFile.mkdirs();
+			}
+			if (!dir.exists()) {
+				dir.mkdirs();
+			}
+		} catch (SecurityException ex) {
+			ex.printStackTrace();
+			outputText(res, false, ex.getMessage());
+			return;
+		}
+
+		DiskFileItemFactory factory = new DiskFileItemFactory();
+
+		// Set factory constraints
+		factory.setSizeThreshold(4096); // 设置缓冲区大小，这里是4kb
+		factory.setRepository(bufFolderFile);// 设置缓冲区目录
+
+		// Create a new file upload handler
+		ServletFileUpload upload = new ServletFileUpload(factory);
+
+		// Set overall request size constraint
+		upload.setSizeMax(maxSize); // 设置最大文件尺寸
 
 		// 设置响应编码
 		res.setContentType("text/html;charset=UTF-8");
 
-		// 输出流
-		OutputStream os = null;
+		// 回调函数参数
+		boolean arg0 = false;
+		String arg1 = "";
 
 		try {
-			// file对象为null
-			if (file == null) {
-				os = res.getOutputStream();
-				os.write("<script>parent.uploadCallBack(false,'上传失败：上传的文件为空')</script>".getBytes("UTF-8"));
-				return;
+			// 上传文件,并解析出所有的表单字段，包括普通字段和文件字段
+			List<FileItem> items = upload.parseRequest(req);
+			Iterator<FileItem> it = items.iterator();
+
+			// 遍历表单文件
+			while (it.hasNext()) {
+				FileItem fi = (FileItem) it.next();
+				// 判断是否是文件字段，否为文件字段
+				if (!fi.isFormField()) {
+					String fileName = fi.getName();
+					if (fileName != null) {
+						// 分离文件名和扩展名
+						String name = "";
+						String extention = "";
+						int index = fileName.lastIndexOf(".");
+						if (index == -1) {
+							name = fileName;
+						} else {
+							name = fileName.substring(0, index);
+							extention = fileName.substring(index + 1);
+						}
+
+						// 同步块，将正在写入服务器的文件的文件名保存起来，在循环读取判断是否重复,写完后将application中的name移除掉
+						// 避免重名就设置新的文件名
+						synchronized (this) {
+							ServletContext sc = getServletContext();
+							List<String> aNames = (List<String>) sc.getAttribute("currentUsingNames");
+							if (aNames == null) {
+								aNames = new ArrayList<String>();
+								sc.setAttribute("currentUsingNames", aNames);
+							}
+							boolean isRepeat;
+							int i = 1;
+							do {
+								isRepeat = new File(dir.getPath(), fileName).exists();
+								if (!isRepeat)
+									isRepeat = aNames.contains(fileName);
+								if (isRepeat)
+									fileName = name + "(" + i++ + ")." + extention;
+							} while (isRepeat);
+							aNames.add(fileName);
+							sc.setAttribute("currentUsingNames", aNames);
+						}
+
+						// // 避免重名就设置新的文件名，不考虑并发情况
+						// int i = 1;
+						// while (new File(dir.getPath(), fileName).exists()) {
+						// fileName = name + "(" + i++ + ")." + extention;
+						// }
+
+						// 写文件
+						File savedFile = new File(uploadFolderPath, fileName);
+						fi.write(savedFile);
+
+						// 与上面同步块一起用，移除暂存的文件名
+						synchronized (this) {
+							ServletContext sc = getServletContext();
+							List<String> aNames = (List<String>) sc.getAttribute("currentUsingNames");
+							if (aNames != null) {
+								int i = aNames.indexOf(fileName);
+								if (i > -1)
+									aNames.remove(i);
+								sc.setAttribute("currentUsingNames", aNames);
+							}
+						}
+
+						// 网络访问的文件路径
+						String webPath = "http://" + req.getServerName() + (req.getServerPort() == 80 ? "" : ":" + req.getServerPort()) + req.getContextPath() + "/" + folderPath + "/" + fileName;
+
+						// 保存上传成功信息至服务器
+						DialogManager.saveDialog(getServletContext(), "[\"" + fileName + "\",\"" + webPath + "\"]", 2);
+
+						arg0 = true;
+						arg1 = fileName;
+					}
+				}
 			}
-
-			// 获取上传的文件名
-			// form-data; name="file"; filename="新建文本文档 (3).xml"
-			String temp = file.getHeader("content-disposition").split(";")[2].trim();
-			String fileName = temp.substring(10, temp.length() - 1);
-			
-			// 上传在服务器文件夹文字
-			String folderPath = "uploadFiles";
-
-			// 找到上传文件夹，没有就创建一个
-			File dir = new File(getServletContext().getRealPath("/" + folderPath));
-			if (!dir.exists()) {
-				dir.mkdir();
-			}
-
-			// 分离文件名和扩展名
-			String name = "";
-			String extention = "";
-			int index = fileName.lastIndexOf(".");
-			if (index == -1) {
-				name = fileName;
+		} catch (FileUploadException ex) {
+			if (ex instanceof SizeLimitExceededException) {
+				// 文件超过预设大小的错误
+				arg1 = "上传失败: 文件不能大于" + maxSize / 1024 / 1024 + " MB";
 			} else {
-				name = fileName.substring(0, index);
-				extention = fileName.substring(index + 1);
+				ex.printStackTrace();
+				arg1 = "上传失败: " + ex.getMessage();
 			}
-
-			// 避免重名就设置新的文件名
-			int i = 1;
-			while (new File(dir.getPath() + "//" + fileName).exists()) {
-				fileName = name + "(" + i + ")." + extention;
-				i++;
-			}
-
-			// 将文件写入服务器上
-			try {
-				file.write(dir.getPath() + "//" + fileName);
-			} catch (IOException e) {
-				e.printStackTrace();
-				String rtnText = "<script>parent.uploadCallBack(false,'文件写入服务器本地磁盘时出错')</script>";
-				os = res.getOutputStream();
-				os.write(rtnText.getBytes("UTF-8"));
-			}
-
-			// 文件路径
-			String filePath = "http://" + req.getServerName() + ":"
-					+ req.getServerPort() + req.getContextPath() + "/"
-					+ folderPath + "/" + fileName;
-
-			// 保存上传成功信息
-			DialogManager.saveDialog(getServletContext(), "[\"" + fileName + "\",\"" + filePath + "\"]", 2);
-			
-			// 输出js回调函数
-			String rtnText = "<script>parent.uploadCallBack(true,'" + fileName + "')</script>";
-			os = res.getOutputStream();
-			os.write(rtnText.getBytes("UTF-8"));
-		} catch (IOException ex) {
-			ex.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+			arg1 = "上传失败: " + e.getMessage();
 		} finally {
-			Utilities.closeOutputStream(os);
+			// 响应输出
+			outputText(res, arg0, arg1);
 		}
+	}
+
+	private void outputText(HttpServletResponse res, boolean isSuccess, String text) {
+		Utilities.outputText(res, "<script>parent.uploadCallBack(" + isSuccess + ",'" + text + "')</script>".toString());
 	}
 }

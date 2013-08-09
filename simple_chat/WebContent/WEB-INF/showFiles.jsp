@@ -2,8 +2,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>Show Server's Files</title>
+<link rel="stylesheet" type="text/css" href="resources/css/fileIcon.css" />
 <style>
 .title{float:left;clear:both}
 .main{float:left;clear:both;min-width: 60%;}
@@ -13,21 +14,8 @@
 .main table td span{;width:20px;height:20px;float:left;margin:0 10px 0 0}
 .main table td a{float:left}
 .main table td a:hover{text-decoration: underline;color:blue;cursor:pointer;}
-.disk{background:transparent no-repeat scroll 0 0 url(resources/images/disk.png)}
-.exe{background:transparent no-repeat scroll 0 0 url(resources/images/exe.png)}
-.flash{background:transparent no-repeat scroll 0 0 url(resources/images/flash.png)}
-.folder{background:transparent no-repeat scroll 0 0 url(resources/images/folder.png)}
-.image{background:transparent no-repeat scroll 0 0 url(resources/images/image.png)}
-.music{background:transparent no-repeat scroll 0 0 url(resources/images/music.png)}
-.pdf{background:transparent no-repeat scroll 0 0 url(resources/images/pdf.png)}
-.return{background:transparent no-repeat scroll 0 0 url(resources/images/return.png)}
-.txt{background:transparent no-repeat scroll 0 0 url(resources/images/txt.png)}
-.unknown{background:transparent no-repeat scroll 0 0 url(resources/images/unknown.png)}
-.video{background:transparent no-repeat scroll 0 0 url(resources/images/video.png)}
-.zip{background:transparent no-repeat scroll 0 0 url(resources/images/zip.png)}
-
 </style>
-<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="resources/js/jquery-1.9.1.js"></script>
 <script src="resources/js/ExtTool.js"></script>
 <script>
 function refreshTable(dir){
@@ -84,7 +72,8 @@ function refreshTable(dir){
 				var file = aFiles[prop];
 				var className = ExtTool.getClassName(file.name);
 				html += '<tr><td><span class="'+className+'"></span>'+
-					'<a href="Download2?name='+encodeURIComponent(currentDir + file.name)+'">'+
+					'<a href="Download?dir='+encodeURIComponent(currentDir)+
+					'&name='+encodeURIComponent(file.name)+'">'+
 					file.name+'</a></td><td>'+file.date+'</td><td>'+file.type+'</td><td>'+file.size+'</td></tr>';
 			}
 			

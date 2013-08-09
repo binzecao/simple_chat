@@ -1,40 +1,57 @@
-<%@ page language="java" contentType="text/html; charset=gbk"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>²âÊÔ-»ñÈ¡ÉÏ´«ÎÄ¼şµÄ¾ø¶ÔÂ·¾¶</title>
-
+<title>æµ‹è¯•-è·å–ä¸Šä¼ æ–‡ä»¶çš„ç»å¯¹è·¯å¾„</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style>
+span{color:coral;font-weight:bold;}
+</style>
 <script>
-function test(){
-	var file = document.getElementById("file");
-	
-	/* firefox
-    var reader = new FileReader();
-    reader.readAsDataURL(file.files[0]);
-    alert(reader.result)
-	*/
+	function test() {
+		var file = document.getElementById("file");
 
-	var str = "file.value:" + file.value+"\n<br/>";
-	str += "file.files[0]È«²¿ÊôĞÔ:";
-	for(var p in file.files[0]){
-		str += p+";" ;
+		/* firefox
+		var reader = new FileReader();
+		reader.readAsDataURL(file.files[0]);
+		alert(reader.result)
+		 */
+		if (file.files) {
+			var str = "file.value:" + "<span>" + file.value + "</span>" + "\n<br/>";
+			str += "file.files[0]å…¨éƒ¨å±æ€§:";
+			for ( var p in file.files[0]) {
+				str += "<span>"+ p + "</span>" + ",";
+			}
+			str += "\n<br/>å„å±æ€§å€¼ï¼š\n<br/>";
+			for ( var p in file.files[0]) {
+				str += "\t" + p + ":" + "<span>" + file.files[0][p] + "</span>" + "\n<br/>";
+			}
+			document.getElementById("inf").innerHTML = str;
+		} else {// ie8 æˆ–ä»¥ä¸‹
+			window.onerror = function(err) {
+				if (err.indexOf('Automation') != -1) {
+					alert('æ²¡æœ‰è®¿é—®æ–‡ä»¶çš„æƒé™');
+					return true;
+				} else {
+					return false;
+				}
+			};
+			var fso = new ActiveXObject('Scripting.FileSystemObject');
+			var ieFile = fso.GetFile(fileName);
+			window.onerror = window.oldOnError;
+			document.getElementById("inf").innerHTML = "file å¤§å°ï¼š" + ieFile.size;
+		}
 	}
-	str +="\n<br/>¸÷ÊôĞÔÖµ£º\n<br/>";
-	for(var p in file.files[0]){
-		str += "\t"+p+":"+file.files[0][p]+"\n<br/>"; 
-	}
-	document.getElementById("inf").innerHTML = str;
-}
 </script>
 
 </head>
 <body>
-	<h2>²âÊÔ-»ñÈ¡ÉÏ´«ÎÄ¼şµÄ¾ø¶ÔÂ·¾¶</h2>
-	
-	<input type="file" id="file" value="Ñ¡ÔñÎÄ¼ş"/>
-	<input type="button" value="ÉÏ´«" onclick="test();"/>
-	
-	<hr/>
-	<div id="inf" style="width:100%"></div>
+	<h2>æµ‹è¯•-è·å–ä¸Šä¼ æ–‡ä»¶çš„ç»å¯¹è·¯å¾„</h2>
+
+	<input type="file" id="file" value="é€‰æ‹©æ–‡ä»¶" />
+	<input type="button" value="test" onclick="test();" />
+
+	<hr />
+	<div id="inf" style="width: 100%"></div>
 </body>
 </html>

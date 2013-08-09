@@ -1,97 +1,92 @@
 package bin;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/Download2")
+/**
+ * 普通下载，不支持断点续传
+ */
 public class Download2 extends HttpServlet {
 	private static final long serialVersionUID = 101L;
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		doPost(req, resp);
 	}
 
 	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse res)
-			throws ServletException, UnsupportedEncodingException {
-		// 获取参数且解码
-		String path = req.getParameter("name");
-		path = path == null ? "" : new String(path.getBytes("ISO-8859-1"),
-				"UTF-8");
+	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, UnsupportedEncodingException {
+		// 获取文件名且解码
+		String fileName = req.getParameter("name");
+		fileName = fileName == null ? "" : new String(fileName.getBytes("ISO-8859-1"), "UTF-8");
+
+		// 获取文件所在目录
+		String dir = req.getParameter("dir");
+		String folderName = (String) getServletContext().getAttribute(ServletContextParams.UPLOADFILES_FOLDER_NAME);
+		dir = dir == null ? getServletContext().getRealPath("/" + folderName) : new String(dir.getBytes("ISO-8859-1"), "UTF-8");
 
 		// 输入输出流
-		BufferedInputStream bis = null;
-		BufferedOutputStream bos = null;
+		OutputStream os = null;
+		InputStream is = null;
 
 		try {
 			// 参数为空情况就输出提示
-			if (path == "") {
+			if (dir.equals("") || fileName.equals("")) {
 				res.setContentType("text/html;charset=UTF-8");
-				bos = new BufferedOutputStream(res.getOutputStream());
-				bos.write("参数不能为空".getBytes("UTF-8"));
+				os = res.getOutputStream();
+				os.write("参数不能为空<script>alert('参数不能为空')</script>".getBytes("UTF-8"));
 				return;
 			}
 
+			File file = new File(dir, fileName);
+
 			// 文件不存在就输出提示
-			if (!new File(path).exists()) {
+			if (!file.exists()) {
 				res.setContentType("text/html;charset=UTF-8");
-				bos = new BufferedOutputStream(res.getOutputStream());
-				bos.write("文件不存在".getBytes("UTF-8"));
+				os = res.getOutputStream();
+				os.write("文件不存在<script>alert('文件不存在')</script>".getBytes("UTF-8"));
+				// res.sendError(404);
 				return;
 			}
 
 			// 获取输入输出流
-			bis = new BufferedInputStream(new FileInputStream(path));
-			bos = new BufferedOutputStream(res.getOutputStream());
+			is = new FileInputStream(dir + File.separator + fileName);
+			os = res.getOutputStream();
 
-			// 从完整路径中截取文件名
-			String fileName = path.replaceAll("^([\\s\\S]*(\\\\|/))", "");
-
-			// 文件名转码
-			String agent = req.getHeader("USER-AGENT");
-			if (null != agent && -1 != agent.toUpperCase().indexOf("MSIE")) { // IE内核浏览器
-				fileName = java.net.URLEncoder.encode(fileName, "UTF-8");
-				fileName = new String(fileName.getBytes("UTF-8"), "ISO-8859-1");
-				fileName = fileName.replace("+", "%20");// 处理IE文件名中有空格会变成+"的问题;
-			} else {// 非IE
-				fileName = new String(fileName.getBytes("UTF-8"), "ISO-8859-1");
-			}
-			
 			// 设置响应头
 			String type = ContentTypeUtil.getContentTypeByFileName(fileName);
 			res.setContentType(type + ";charset=UTF-8");
-			res.setContentLength(bis.available());
-			res.addHeader("Content-Disposition", "attachment; filename=\"" + fileName+"\"");
-			
+			res.setContentLength(is.available());
+			res.addHeader("Content-Disposition", "attachment; filename=\"" + Utilities.encodeFileName(req, fileName) + "\"");
+
 			// 文件流输出
 			byte[] bytes = new byte[2048];
 			int len = -1;
-			while ((len = bis.read(bytes)) > -1) {
-				bos.write(bytes, 0, len);
-				bos.flush();
+			while ((len = is.read(bytes)) > -1) {
+				os.write(bytes, 0, len);
+				os.flush();
 			}
 		} catch (IOException ex) {
 			// 某些浏览器(如UC)下载时会报 ClientAbortException: java.net.SocketException:
 			// Connection reset by peer: socket write error
 			// 客户端断开,这个Servlet还在write的错，好像是不可避免的，这里先捕获,使得两个流都能顺利关闭
-			if(!"org.apache.catalina.connector.ClientAbortException".equals(ex.getClass().getName()))
-				 ex.printStackTrace();
+			if (!"org.apache.catalina.connector.ClientAbortException".equals(ex.getClass().getName())){
+				ex.printStackTrace();
+				Utilities.outputText(res, ex.getMessage());
+			}
 		} finally {
 			// 关闭流
-			Utilities.closeInputStream(bis);
-			Utilities.closeOutputStream(bos);
+			Utilities.closeInputStream(is);
+			Utilities.closeOutputStream(os);
 		}
 	}
 }
