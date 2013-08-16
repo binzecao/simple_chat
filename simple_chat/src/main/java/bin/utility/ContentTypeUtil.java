@@ -1,4 +1,4 @@
-package bin;
+package bin.utility;
 
 /** ContentType转换类 */
 public class ContentTypeUtil {

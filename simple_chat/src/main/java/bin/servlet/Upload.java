@@ -1,8 +1,9 @@
-package bin;
+package bin.servlet;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,12 +19,14 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
+import bin.model.Dialog;
+import bin.service.DialogService;
+import bin.utility.ServiceContainer;
+import bin.utility.ServletContextParams;
+import bin.utility.Utilities;
+
 public class Upload extends HttpServlet {
 	private static final long serialVersionUID = 101L;
-
-	public Upload() {
-		super();
-	}
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -159,8 +162,14 @@ public class Upload extends HttpServlet {
 						// 网络访问的文件路径
 						String webPath = "http://" + req.getServerName() + (req.getServerPort() == 80 ? "" : ":" + req.getServerPort()) + req.getContextPath() + "/" + folderPath + "/" + fileName;
 
-						// 保存上传成功信息至服务器
-						DialogManager.saveDialog(getServletContext(), "[\"" + fileName + "\",\"" + webPath + "\"]", 2);
+						// 保存上传成功信息至数据库
+						Dialog dialog = new Dialog();
+						dialog.setTxt(java.net.URLEncoder.encode("[\"" + fileName + "\",\"" + webPath + "\"]", "UTF-8").replaceAll("\\+", "%20"));
+						dialog.setType(2);
+						dialog.setDate(new Date());
+						dialog.setClientIP(req.getRemoteAddr());
+						DialogService service = (DialogService) ServiceContainer.getService("dialogService");
+						service.save(dialog);
 
 						arg0 = true;
 						arg1 = fileName;
@@ -172,11 +181,11 @@ public class Upload extends HttpServlet {
 				// 文件超过预设大小的错误
 				arg1 = "上传失败: 文件不能大于" + maxSize / 1024 / 1024 + " MB";
 			} else {
-				ex.printStackTrace();
 				arg1 = "上传失败: " + ex.getMessage();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			arg1 = "上传失败: " + e.getMessage();
+		} catch (Throwable e) {
 			arg1 = "上传失败: " + e.getMessage();
 		} finally {
 			// 响应输出

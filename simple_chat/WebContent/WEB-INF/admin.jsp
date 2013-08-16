@@ -67,6 +67,7 @@ p.summary{color: red;font-size: 14px;margin: 10px 0;}
 <a href="<%=request.getContextPath() %>/">Home Page</a><br/>
 <a href="<%=request.getContextPath() %>/ShowUploadFiles">Show Upload Files</a><br/>
 <a href="<%=request.getContextPath() %>/ShowServerFiles">Show Server's Files</a><br/>
-
+<a href="<%=request.getContextPath() %>/ShowLog">Show System's Log</a><br/>
+<a href="<%=request.getContextPath() %>/Admin2">Reset DataSource Connect String And Log4j Path</a>
 </body>
 </html>

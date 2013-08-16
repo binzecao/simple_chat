@@ -1,4 +1,4 @@
-package bin;
+package bin.utility;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +37,7 @@ public class Utilities {
 	public static void outputText(HttpServletResponse res, String text) {
 		res.reset();
 		res.setContentType("text/html;charset=UTF-8");
+		res.setHeader("Cache-Control", "no-cache");
 		OutputStream os = null;
 		try {
 			os = res.getOutputStream();
@@ -118,5 +119,17 @@ public class Utilities {
 	/** 对String数组进行快速排序 */
 	public static void qSort(String[] arr) {
 		qSortInternal(arr, 0, arr.length - 1);
+	}
+
+	/** Servlet响应流输出捕获的错误信息 */
+	public static void OutputErrorMsg(HttpServletResponse res, Throwable e) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("SQLException:" + e.getMessage() + "<br>");
+		StackTraceElement[] s = e.getStackTrace();
+		for (int i = 0; i < s.length; i++) {
+			sb.append("<p class='error-p'>" + s[i].getClassName() + ".<" + s[i].getMethodName() + ">(<u class='error-u'>" + s[i].getFileName() + ":" + s[i].getLineNumber() + "</u>)</p>");
+		}
+		sb.append("<style>u.error-u{color:blue} p.error-p{color:red;margin: 1 25;}</style>");
+		outputText(res, sb.toString());
 	}
 }

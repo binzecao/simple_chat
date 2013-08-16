@@ -1,4 +1,4 @@
-package bin;
+package bin.servlet;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.swing.JFileChooser;
+
+import bin.utility.Utilities;
 
 public class AjaxLoadServerFiles extends HttpServlet {
 	private static final long serialVersionUID = 101L;
@@ -55,13 +57,11 @@ public class AjaxLoadServerFiles extends HttpServlet {
 				// 检查目录是否存在
 				try {
 					if (!dir.exists()) {
-						os = res.getOutputStream();
-						os.write("{error:'该目录不存在'}".getBytes("UTF-8"));
+						Utilities.outputText(res, "{error:'该目录不存在'}");
 						return;
 					}
 				} catch (SecurityException ex) {
-					os = res.getOutputStream();
-					os.write(("{error:'" + ex.getMessage() + "'}").getBytes("UTF-8"));
+					Utilities.outputText(res, "{error:'" + ex.getMessage() + "'}");
 					return;
 				}
 

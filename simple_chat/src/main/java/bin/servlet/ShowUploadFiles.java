@@ -1,4 +1,4 @@
-package bin;
+package bin.servlet;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +15,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.swing.JFileChooser;
+
+import bin.utility.ServletContextParams;
+import bin.utility.Utilities;
 
 public class ShowUploadFiles extends HttpServlet {
 	private static final long serialVersionUID = 101L;

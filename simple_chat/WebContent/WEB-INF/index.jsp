@@ -18,7 +18,8 @@
 <script>
 $(function(){
 	// 全局变量
-	failedConnTime = 0;//定义连接服务器次数
+	failedConnTime = 0;// 连接服务器失败次数
+	otherErrorTime = 0;// 服务器发生错误次数
 	timeoutId = null;
 	
 	//初始化编辑器
@@ -46,8 +47,10 @@ function ajaxLoad(isLoadAll){
 			//"{hasError:false,aDialogs:[{did:0,type:1,txt:'a'},{did:1,type:2,txt:'\''}]}"  // 对话
 			//type:1 :普通对话    type:2 上传文件成功提示
 			
-			// 转义字符"\"变为"\\"，使eval不出错
-			//rtnText = rtnText.replace(/\\/g,"\\\\");
+			if(rtnText != null && rtnText == ""){
+				otherErrorTime++;
+				return;
+			}
 			
 			// 解析返回的json对象
 			var rtnObj = eval("("+rtnText+")");
@@ -55,7 +58,7 @@ function ajaxLoad(isLoadAll){
 			// 出错提示
 			if(rtnObj.hasError){
 				alert(rtnObj.errorTxt);
-				return
+				return;
 			}
 			
 			// 获取对话数组
@@ -80,6 +83,7 @@ function ajaxLoad(isLoadAll){
 						'</div>';
 				}else if(type==2){
 					// 对话为上传提示
+					txt = decodeURIComponent(txt);
 					var aFile = eval(txt);
 					var name = encodeURI(aFile[0]);
 					html = '<div class="'+className+'" dialog-id="'+did+'">'+
@@ -88,7 +92,7 @@ function ajaxLoad(isLoadAll){
 						'<a href="'+encodeURI(aFile[1])+'" style="margin-left:30px">直接浏览</a>'+
 						'</div>';
 				}else{
-					alert("marking another type");
+					alert("making another type");
 				}
 				if($(".dialog").size()==0){
 					$(html).appendTo('#dialog-panel');
@@ -96,32 +100,39 @@ function ajaxLoad(isLoadAll){
 					$(html).insertBefore('.dialog:first');
 				}
 			}
+			// 重设错误次数
+			failedConnTime = 0;
+			otherErrorTime = 0;
+			// 重新连接
+			timeoutId = setTimeout(function(){ajaxLoad(false);},1500);
 		},
 		error:function(evt){
 			if((evt.readyState==0 && evt.status==0) || 
 					(evt.readyState==4 && (evt.status==404 || evt.status==12029))){
 				// 无法连接服务器
 				failedConnTime++;
+				if(failedConnTime>=3){ //无法连接超过一定次数 
+					alert("与服务器的连接已断,请刷新页面再试!");
+					clearTimeout(timeoutId);
+					return;
+				}
 			}else{
 				// 其他异常
-				alert("error in ajaxLoad\n"+
-						"readyState: "+evt.readyState+
-						"\nstatus: "+evt.status+
-						"\nstatusText: "+evt.statusText);
+				otherErrorTime++;
+				if(otherErrorTime>=3){// 发生其他错误超过一次次数
+				 	clearTimeout(timeoutId);
+					// 显示最后一次出错详情
+					alert("系统读取异常，请刷新页面\n" + "error in ajaxLoad\n"+
+							"readyState: "+evt.readyState+
+							"\nstatus: "+evt.status+
+							"\nstatusText: "+evt.statusText);
+					return;
+				}
 			}
-		},
-		complete:function(){
-			// 无法连接服务器的操作
-			if(failedConnTime>3){ //无法连接超过10次 
-				alert("与服务器的连接已断,请刷新页面再试!");
-				clearTimeout(timeoutId);
-			}else{
-				// 成功异步成功连接后处理
-				// 这种方法保证只有一条异步连接
-				timeoutId = setTimeout(function(){ajaxLoad(false);},1500);
-			}
-		}}
-	);
+			// 重新连接
+			timeoutId = setTimeout(function(){ajaxLoad(false);},1500);
+		}
+	});
 }
 function speak(){
 	var content = $("#inputer").contents()[0].body.innerHTML;
@@ -137,9 +148,13 @@ function speak(){
 		url:"Speak",
 		type:"post",
 		data:{content:content},
-		dataType:"text",
-		success:function(resText){
-			$("#inputer").contents()[0].body.innerHTML = "";
+		dataType:"json",
+		success:function(rtnObj){
+			if(rtnObj.hasError){
+				alert(rtnObj.errorText);
+			}else{
+				$("#inputer").contents()[0].body.innerHTML = "";
+			}
 		},
 		error:function(evt){
 			if((evt.readyState==0 && evt.status==0) || 
@@ -147,7 +162,7 @@ function speak(){
 				alert("与服务器的连接已断,请刷新页面再试!");
 			}else{
 				// 其他异常
-				alert("error in ajaxLoad\n"+
+				alert("提交出错\n" + "error in Speak\n"+
 						"readyState: "+evt.readyState+
 						"\nstatus: "+evt.status+
 						"\nstatusText: "+evt.statusText);

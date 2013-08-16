@@ -1,4 +1,4 @@
-package bin;
+package bin.utility;
 
 public class ServletContextParams {
 	public static String UPLOADFILES_FOLDER_NAME = "UPLOADFILES_FOLDER_NAME";

@@ -1,4 +1,4 @@
-package bin;
+package bin.filter;
 
 import java.io.IOException;
 

@@ -1,4 +1,4 @@
-package bin;
+package bin.servlet;
 
 import java.io.IOException;
 

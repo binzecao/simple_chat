@@ -1,4 +1,4 @@
-package bin;
+package bin.servlet;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,6 +11,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import bin.utility.ContentTypeUtil;
+import bin.utility.ServletContextParams;
+import bin.utility.Utilities;
 
 /**
  * 普通下载，不支持断点续传

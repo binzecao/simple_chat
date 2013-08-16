@@ -1,4 +1,4 @@
-package bin;
+package bin.servlet;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,6 +9,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import bin.service.DialogService;
+import bin.utility.ServiceContainer;
+import bin.utility.ServletContextParams;
+import bin.utility.TokenGen;
 
 public class Admin extends HttpServlet {
 	private static final long serialVersionUID = 101L;
@@ -100,7 +105,14 @@ public class Admin extends HttpServlet {
 		// 重复提交检查
 		if (token != null && token.checkValue(tokenName, rTokenValue, req)) {
 			// 通过检验
-			DialogManager.setDialogsList(getServletContext(), new ArrayList<Dialog>());
+			DialogService service = (DialogService) ServiceContainer.getService("dialogService");
+			try {
+				service.removeAll();
+			} catch (Throwable e) {
+				req.setAttribute("clearDialogs_isSuccess", false);
+				req.setAttribute("clearDialogs_hint", e.getMessage());
+				return;
+			}
 			req.setAttribute("clearDialogs_isSuccess", true);
 		} else {
 			// 表单已经提交过了

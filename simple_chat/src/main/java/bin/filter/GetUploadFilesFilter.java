@@ -1,4 +1,4 @@
-package bin;
+package bin.filter;
 
 import java.io.IOException;
 
@@ -10,6 +10,8 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+
+import bin.utility.ServletContextParams;
 
 /** 访问上传文件夹的静态资源的转码过滤器 */
 public class GetUploadFilesFilter implements Filter {
