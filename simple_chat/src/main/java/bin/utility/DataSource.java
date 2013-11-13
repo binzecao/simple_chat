@@ -12,6 +12,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -32,6 +33,7 @@ public class DataSource {
 
 	/** 初始化 */
 	public static void initialize(String path) {
+//		System.out.println(System.getenv(""));
 		instance = new DataSource();
 		String url = null, username = null, password = null;
 		try {
@@ -42,6 +44,15 @@ public class DataSource {
 			for (int i = 0; i < params.getLength(); i++) {
 				Element param = (Element) params.item(i);
 				String name = param.getAttribute("name");
+				if (name.equalsIgnoreCase("driverManager")) {
+					if (param.hasChildNodes()){
+						try {
+							Class.forName(param.getFirstChild().getNodeValue());
+						} catch (ClassNotFoundException e) {
+							log.fatal("parse\"" + path + "\" failed,error message:\" " +e + "\"");
+						}
+					}
+				}
 				if (name.equalsIgnoreCase("url")) {
 					url = param.getFirstChild().getNodeValue();
 				}
@@ -49,7 +60,10 @@ public class DataSource {
 					username = param.getFirstChild().getNodeValue();
 				}
 				if (name.equalsIgnoreCase("password")) {
-					password = param.getFirstChild().getNodeValue();
+					if (param.hasChildNodes())
+						password = param.getFirstChild().getNodeValue();
+					else
+						password = "";
 				}
 			}
 			instance.url = url;
@@ -57,14 +71,16 @@ public class DataSource {
 			instance.password = password;
 			log.info("parse\"" + path + "\" successful, the jdbc url is: " + url);
 		} catch (SAXException e) {
-			log.error("parse\"" + path + "\" failed,error message:\"" + e.getMessage() + "\"");
+			log.error("parse\"" + path + "\" failed,error message:\" " +e + "\"");
 		} catch (IOException e) {
-			log.error("parse\"" + path + "\" failed,error message:\"" + e.getMessage() + "\"");
+			log.error("parse\"" + path + "\" failed,error message:\" " +e + "\"");
 		} catch (ParserConfigurationException e) {
-			log.error("parse\"" + path + "\" failed,error message:\"" + e.getMessage() + "\"");
+			log.error("parse\"" + path + "\" failed,error message:\" " +e + "\"");
 		} catch (NullPointerException e) {
-			log.error("parse\"" + path + "\" failed,error message:\"" + e.getMessage() + "\"");
-		}
+			log.error("parse\"" + path + "\" failed,error message:\" " +e + "\"");
+		} catch (DOMException e) {
+			log.error("parse\"" + path + "\" failed,error message:\" " +e + "\"");
+		} 
 	}
 
 	/** 获取实例 */
@@ -112,7 +128,7 @@ public class DataSource {
 		instance.password = password;
 		log.info("reset DataSource Connection String successful, the url is \"" + url + "\"");
 	}
-	
+
 	// 这三个方法正常情况下是要做权限检查
 	public String getUrl() {
 		return url;

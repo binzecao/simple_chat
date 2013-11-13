@@ -31,6 +31,7 @@ public class SystemInitListener implements ServletContextListener {
 		
 		// 获取日志对象
 		Logger log = Logger.getLogger(SystemInitListener.class);
+		log.info("-------------------------------------------------------------------------");
 		log.info("System start initializing...");
 
 		// 初始化系统参数

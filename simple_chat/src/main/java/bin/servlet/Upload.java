@@ -144,6 +144,7 @@ public class Upload extends HttpServlet {
 						// }
 
 						// 写文件
+						// TODO FileItem.write()在OpenShift上有错，当上传文件为中文时，写入文件名会变成???，但使用系统File类操作文件又可以...
 						File savedFile = new File(uploadFolderPath, fileName);
 						fi.write(savedFile);
 
@@ -159,8 +160,9 @@ public class Upload extends HttpServlet {
 							}
 						}
 
-						// 网络访问的文件路径
-						String webPath = "http://" + req.getServerName() + (req.getServerPort() == 80 ? "" : ":" + req.getServerPort()) + req.getContextPath() + "/" + folderPath + "/" + fileName;
+						// 网络访问的文件路径(以下注释这个会照成:访问的域名不同，req.getServerName()不同)
+						//String webPath = "http://" + req.getServerName() + (req.getServerPort() == 80 ? "" : ":" + req.getServerPort()) + req.getContextPath() + "/" + folderPath + "/" + fileName;
+						String webPath = folderPath + "/" + fileName;
 
 						// 保存上传成功信息至数据库
 						Dialog dialog = new Dialog();

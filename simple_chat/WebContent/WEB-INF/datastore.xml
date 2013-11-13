@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <database>
 	<!-- "<",">","&" 需要转义 -->
-	<param name="database_version">mysql</param>
+	<param name="driverManager">com.mysql.jdbc.Driver</param>
 	<param name="url">jdbc:mysql://localhost:3306/simple_chat?autoReconnect=true&amp;useUnicode=true&amp;characterEncoding=UTF-8</param>
 	<param name="username">root</param>
 	<param name="password">12345</param>

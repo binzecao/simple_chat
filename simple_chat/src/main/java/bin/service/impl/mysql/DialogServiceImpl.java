@@ -29,10 +29,10 @@ public class DialogServiceImpl implements DialogService {
 			StringBuffer sql = new StringBuffer();
 			sql.append("insert into dialog (txt,type,date,clientIP) values(");
 			dialog.setTxt(java.net.URLEncoder.encode(dialog.getTxt(), "UTF-8").replaceAll("\\+", "%20"));
-			sql.append("\"" + dialog.getTxt() + "\",");
+			sql.append("'" + dialog.getTxt() + "',");
 			sql.append(dialog.getType() + ",");
-			sql.append("\"" + new java.sql.Timestamp(dialog.getDate().getTime()) + "\",");
-			sql.append("\"" + dialog.getClientIP() + "\"");
+			sql.append("'" + new java.sql.Timestamp(dialog.getDate().getTime()) + "',");
+			sql.append("'" + dialog.getClientIP() + "'");
 			sql.append(")");
 			int result = stmt.executeUpdate(sql.toString());
 			if (result > 0)
