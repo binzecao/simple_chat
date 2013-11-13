@@ -1,0 +1,8 @@
+使用方法:
+
+Dynamic Web Module 2.5
+java 1.6
+
+1、WebContent/lib下删除原来的mysql连接包，然后将新的数据库连接包放入WebContent/lib下。或者修改pom.xml下的mysql部分。
+2、修改WebContent/WEB-INF/datastore.xml相应部分。
+3、放到容器下运行。
